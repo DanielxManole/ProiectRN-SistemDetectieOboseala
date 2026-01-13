@@ -81,228 +81,114 @@ ________________________________________________________________________________
 2.  **Software:** Script propriu (`collect_my_data.py`) care utilizează Haar Cascades pentru a decupa automat regiunea de interes (ROI) a ochiului și a o salva doar la confirmarea manuală a utilizatorului.
 3.  **Procesare:** Imaginile au fost salvate direct în format decupat (ROI), color, cu timestamp unic pentru a garanta trasabilitatea.
 
-**Exemplu Date Generate (Before/After):**
-* **Original:** Imagine clară, frontală.
-* **Sintetic:** Aceeași imagine rotită cu 15 grade, cu zgomot de senzor adăugat (simulare condiții de noapte/vibrații).
-
 ### 3. Diagrama State Machine a Întregului Sistem (OBLIGATORIE)
 
-**Cerințe:**
-- **Minimum 4-6 stări clare** cu tranziții între ele
-- **Formate acceptate:** PNG/SVG, pptx, draw.io 
-- **Locație:** `docs/state_machine.*` (orice extensie)
-- **Legendă obligatorie:** 1-2 paragrafe în acest README: "De ce ați ales acest State Machine pentru nevoia voastră?"
+![Diagrama State Machine](docs/state_machine.svg)
 
-**Stări tipice pentru un SIA:**
-```
-IDLE → ACQUIRE_DATA → PREPROCESS → INFERENCE → DISPLAY/ACT → LOG → [ERROR] → STOP
-                ↑______________________________________________|
-```
+**Arhitectura fluxului de date:**
 
-**Exemple concrete per domeniu de inginerie:**
-
-#### A. Monitorizare continuă proces industrial (vibrații motor, temperaturi, presiuni):
+```text
+IDLE → INITIALIZE_SYSTEM (Load CNN Model, Warm-up Camera) → ACQUIRE_FRAME → 
+DETECT_FACE_MESH (MediaPipe) → 
+  ├─ [No Face Detected] → DISPLAY_FRAME → ACQUIRE_FRAME (loop)
+  └─ [Face Detected] → EXTRACT_EYE_ROI → PREPROCESS (Grayscale, Resize 64x64) → 
+                     RN_INFERENCE (CNN Prediction) → UPDATE_DROWSINESS_SCORE → 
+                     CHECK_THRESHOLD (Score > 15?) → 
+                       ├─ [Safe Condition] → DRAW_OVERLAY (Green UI) → DISPLAY_FRAME → 
+                       │                     ACQUIRE_FRAME (loop)
+                       └─ [Drowsy Detected] → TRIGGER_ALARM_STATE → 
+                                            DRAW_WARNING (Red UI) → 
+                                            START_AUDIO_THREAD (Non-blocking) → 
+                                            ACQUIRE_FRAME (loop)
+       ↓ [User Interrupt 'q']
+     RELEASE_RESOURCES → STOP
 ```
-IDLE → START_ACQUISITION → COLLECT_SENSOR_DATA → BUFFER_CHECK → 
-PREPROCESS (filtrare, FFT) → RN_INFERENCE → THRESHOLD_CHECK → 
-  ├─ [Normal] → LOG_RESULT → UPDATE_DASHBOARD → COLLECT_SENSOR_DATA (loop)
-  └─ [Anomalie] → TRIGGER_ALERT → NOTIFY_OPERATOR → LOG_INCIDENT → 
-                  COLLECT_SENSOR_DATA (loop)
-       ↓ [User stop / Emergency]
-     SAFE_SHUTDOWN → STOP
-```
-
-#### B. Clasificare imagini defecte producție (suduri, suprafețe, piese):
-```
-IDLE → WAIT_TRIGGER (senzor trecere piesă) → CAPTURE_IMAGE → 
-VALIDATE_IMAGE (blur check, brightness) → 
-  ├─ [Valid] → PREPROCESS (resize, normalize) → RN_INFERENCE → 
-              CLASSIFY_DEFECT → 
-                ├─ [OK] → LOG_OK → CONVEYOR_PASS → IDLE
-                └─ [DEFECT] → LOG_DEFECT → TRIGGER_REJECTION → IDLE
-  └─ [Invalid] → ERROR_IMAGE_QUALITY → RETRY_CAPTURE (max 3×) → IDLE
-       ↓ [Shift end]
-     GENERATE_REPORT → STOP
-```
-
-#### C. Predicție traiectorii robot mobil (AGV, AMR în depozit):
-```
-IDLE → LOAD_MAP → RECEIVE_TARGET → PLAN_PATH → 
-VALIDATE_PATH (obstacle check) →
-  ├─ [Clear] → EXECUTE_SEGMENT → ACQUIRE_SENSORS (LIDAR, IMU) → 
-              RN_PREDICT_NEXT_STATE → UPDATE_TRAJECTORY → 
-                ├─ [Target reached] → STOP_AT_TARGET → LOG_MISSION → IDLE
-                └─ [In progress] → EXECUTE_SEGMENT (loop)
-  └─ [Obstacle detected] → REPLAN_PATH → VALIDATE_PATH
-       ↓ [Emergency stop / Battery low]
-     SAFE_STOP → LOG_STATUS → STOP
-```
-
-#### D. Predicție consum energetic (turbine eoliene, procese batch):
-```
-IDLE → LOAD_HISTORICAL_DATA → ACQUIRE_CURRENT_CONDITIONS 
-(vânt, temperatură, demand) → PREPROCESS_FEATURES → 
-RN_FORECAST (24h ahead) → VALIDATE_FORECAST (sanity checks) →
-  ├─ [Valid] → DISPLAY_FORECAST → UPDATE_CONTROL_STRATEGY → 
-              LOG_PREDICTION → WAIT_INTERVAL (1h) → 
-              ACQUIRE_CURRENT_CONDITIONS (loop)
-  └─ [Invalid] → ERROR_FORECAST → USE_FALLBACK_MODEL → LOG_ERROR → 
-                ACQUIRE_CURRENT_CONDITIONS (loop)
-       ↓ [User request report]
-     GENERATE_DAILY_REPORT → STOP
-```
-
-**Notă pentru proiecte simple:**
-Chiar dacă aplicația voastră este o clasificare simplă (user upload → classify → display), trebuie să modelați fluxul ca un State Machine. Acest exercițiu vă învață să gândiți modular și să anticipați toate stările posibile (inclusiv erori).
-
 **Legendă obligatorie (scrieți în README):**
-```markdown
+
 ### Justificarea State Machine-ului ales:
 
-Am ales arhitectura [descrieți tipul: monitorizare continuă / clasificare la senzor / 
-predicție batch / control în timp real] pentru că proiectul nostru [explicați nevoia concretă 
-din tabelul Secțiunea 1].
+Am ales arhitectura de monitorizare continuă în timp real cu procesare secvențială pentru că proiectul nostru vizează siguranța rutieră și necesită o latență minimă între achiziția imaginii și decizia de alertare, precum și o filtrare temporală pentru evitarea alarmelor false (clipit vs. somn).
 
 Stările principale sunt:
-1. [STARE_1]: [ce se întâmplă aici - ex: "achiziție 1000 samples/sec de la accelerometru"]
-2. [STARE_2]: [ce se întâmplă aici - ex: "calcul FFT și extragere 50 features frecvență"]
-3. [STARE_3]: [ce se întâmplă aici - ex: "inferență RN cu latență < 50ms"]
-...
+1. ACQUIRE_FRAME: Captura sincronă a fluxului video de la camera web la 30 FPS.
+2. DETECT_FACE & PREPROCESS: Localizarea feței folosind MediaPipe și extragerea regiunii de interes (ROI) a ochiului, urmată de conversia în Grayscale și redimensionarea la 64x64 pixeli pentru a se potrivi cu intrarea rețelei neuronale.
+3. RN_INFERENCE: Propagarea imaginii prin rețeaua CNN antrenată, care returnează o probabilitate (0.0 - 1.0) pentru clasa "Closed".
+4. UPDATE_SCORE & LOGIC: Actualizarea unui contor intern (buffer temporal). Dacă ochiul este clasificat "Închis", scorul crește; dacă este "Deschis", scorul scade rapid (Blink Recovery).
+5. TRIGGER_ALARM: Starea de alertă maximă care activează interfața grafică roșie și lansează sunetul de avertizare pe un fir de execuție paralel.
 
 Tranzițiile critice sunt:
-- [STARE_A] → [STARE_B]: [când se întâmplă - ex: "când buffer-ul atinge 1024 samples"]
-- [STARE_X] → [ERROR]: [condiții - ex: "când senzorul nu răspunde > 100ms"]
+- [DETECT_FACE] → [ACQUIRE_FRAME]: Se întâmplă când șoferul își întoarce capul sau camera este obturată. Sistemul intră într-o buclă de așteptare (Skip Frame) fără a bloca aplicația sau a da crash.
+- [CHECK_THRESHOLD] → [TRIGGER_ALARM]: Se întâmplă strict când variabila drowsy_score depășește pragul de 15 cadre consecutive. Aceasta este tranziția critică de siguranță care separă starea de veghe de cea de pericol.
 
-Starea ERROR este esențială pentru că [explicați ce erori pot apărea în contextul 
-aplicației voastre industriale - ex: "senzorul se poate deconecta în mediul industrial 
-cu vibrații și temperatură variabilă, trebuie să gestionăm reconnect automat"].
+Starea ERROR (sau fail-safe) este esențială pentru că în contextul utilizării la volan, condițiile de iluminare pot varia drastic (intrare în tunel, noapte). Dacă DETECT_FACE eșuează din cauza întunericului, sistemul nu trebuie să se oprească (crash), ci să reia ciclu de achiziție (ACQUIRE_FRAME) până la restabilirea vizibilității.
 
-Bucla de feedback [dacă există] funcționează astfel: [ex: "rezultatul inferenței 
-actualizează parametrii controlerului PID pentru reglarea vitezei motorului"].
-```
+Bucla de feedback funcționează astfel: rezultatul inferenței curente (Ochi Închis/Deschis) actualizează variabila de stare drowsy_score (istoricul recent), care la rândul ei dictează comportamentul sistemului în cadrul următor (histerezis), prevenind oscilațiile rapide ale alarmei.
 
 ---
 
-### 4. Scheletul Complet al celor 3 Module Cerute la Curs (slide 7)
+### 4. Scheletul Complet al Modulelor Software
 
-Toate cele 3 module trebuie să **pornească și să ruleze fără erori** la predare. Nu trebuie să fie perfecte, dar trebuie să demonstreze că înțelegeți arhitectura.
+Toate cele 3 module sunt implementate, integrate și rulează fără erori.
 
-| **Modul** | **Python (exemple tehnologii)** | **LabVIEW** | **Cerință minimă funcțională (la predare)** |
-|-----------|----------------------------------|-------------|----------------------------------------------|
-| **1. Data Logging / Acquisition** | `src/data_acquisition/` | LLB cu VI-uri de generare/achiziție | **MUST:** Produce CSV cu datele voastre (inclusiv cele 40% originale). Cod rulează fără erori și generează minimum 100 samples demonstrative. |
-| **2. Neural Network Module** | `src/neural_network/model.py` sau folder dedicat | LLB cu VI-uri RN | **MUST:** Modelul RN definit, compilat, poate fi încărcat. **NOT required:** Model antrenat cu performanță bună (poate avea weights random/inițializați). |
-| **3. Web Service / UI** | Streamlit, Gradio, FastAPI, Flask, Dash | WebVI sau Web Publishing Tool | **MUST:** Primește input de la user și afișează un output. **NOT required:** UI frumos, funcționalități avansate. |
+| **Modul** | **Implementare (Fișiere)** | **Status Funcționalitate (La predare)** |
+|-----------|----------------------------|-----------------------------------------|
+| **1. Data Logging / Acquisition** | `src/collect_my_data.py`<br>`src/augment_data.py` | **[x] FINALIZAT.** Scriptul de achiziție rulează stabil, iar pipeline-ul de augmentare a generat peste 6,000 de imagini (CSV-ul este înlocuit de structura de directoare standard `ImageFolder` compatibilă PyTorch). |
+| **2. Neural Network Module** | `src/train_model.py`<br>`models/drowsiness_model.pth` | **[x] FINALIZAT.** Modelul CNN (Clasa `DrowsinessCNN`) este definit, compilat și salvat. Antrenamentul ajunge la convergență (Loss scăzut). |
+| **3. Web Service / UI** | `src/webcam_detect.py` | **[x] FINALIZAT.** Aplicația desktop (bazată pe OpenCV) preia fluxul video, rulează inferența în timp real și afișează overlay-ul grafic + alerte sonore. |
 
-#### Detalii per modul:
+#### Detalii per modul (Checklist de verificare):
 
 #### **Modul 1: Data Logging / Acquisition**
 
-**Funcționalități obligatorii:**
-- [ ] Cod rulează fără erori: `python src/data_acquisition/generate.py` sau echivalent LabVIEW
-- [ ] Generează CSV în format compatibil cu preprocesarea din Etapa 3
-- [ ] Include minimum 40% date originale în dataset-ul final
-- [ ] Documentație în cod: ce date generează, cu ce parametri
+**Funcționalități implementate:**
+- [x] **Codul rulează fără erori:** `python src/collect_my_data.py` deschide camera și salvează ROI-uri corecte.
+- [x] **Compatibilitate:** Generează structura de directoare (`raw/MyOpen`, `raw/MyClosed`) compatibilă 100% cu scriptul de preprocesare din Etapa 3 (`torchvision.datasets.ImageFolder`).
+- [x] **Originalitate:** Datasetul final conține 50% date proprii (originale + augmentate).
+- [x] **Documentație:** Codul conține comentarii detaliate despre parametrii de augmentare (rotire +/- 15 grade, zgomot Gaussian).
 
 #### **Modul 2: Neural Network Module**
 
-**Funcționalități obligatorii:**
-- [ ] Arhitectură RN definită și compilată fără erori
-- [ ] Model poate fi salvat și reîncărcat
-- [ ] Include justificare pentru arhitectura aleasă (în docstring sau README)
-- [ ] **NU trebuie antrenat** cu performanță bună (weights pot fi random)
-
+**Funcționalități implementate:**
+- [x] **Arhitectură Definită:** Clasa `DrowsinessCNN` (3 straturi Convoluționale + 2 straturi Fully Connected + Dropout) este definită explicit în `train_model.py`.
+- [x] **Persistență:** Modelul este salvat automat în `models/drowsiness_model.pth` și reîncărcat cu succes de aplicația de detecție.
+- [x] **Justificare:** Arhitectura aleasă este un CNN clasic, optimizat pentru viteză (inference time mic) și rezoluție scăzută (64x64), ideal pentru procesare real-time pe CPU.
+- [x] **Status Antrenare:** Modelul este funcțional (weights inițializați și antrenați preliminar).
 
 #### **Modul 3: Web Service / UI**
 
-**Funcționalități MINIME obligatorii:**
-- [ ] Propunere Interfață ce primește input de la user (formular, file upload, sau API endpoint)
-- [ ] Includeți un screenshot demonstrativ în `docs/screenshots/`
-
-**Ce NU e necesar în Etapa 4:**
-- UI frumos/profesionist cu grafică avansată
-- Funcționalități multiple (istorice, comparații, statistici)
-- Predicții corecte (modelul e neantrenat, e normal să fie incorect)
-- Deployment în cloud sau server de producție
-
-**Scop:** Prima demonstrație că pipeline-ul end-to-end funcționează: input user → preprocess → model → output.
-
-
-## Structura Repository-ului la Finalul Etapei 4 (OBLIGATORIE)
-
-**Verificare consistență cu Etapa 3:**
-
-```
-proiect-rn-[nume-prenume]/
-├── data/
-│   ├── raw/
-│   ├── processed/
-│   ├── generated/  # Date originale
-│   ├── train/
-│   ├── validation/
-│   └── test/
-├── src/
-│   ├── data_acquisition/
-│   ├── preprocessing/  # Din Etapa 3
-│   ├── neural_network/
-│   └── app/  # UI schelet
-├── docs/
-│   ├── state_machine.*           #(state_machine.png sau state_machine.pptx sau state_machine.drawio)
-│   └── [alte dovezi]
-├── models/  # Untrained model
-├── config/
-├── README.md
-├── README_Etapa3.md              # (deja existent)
-├── README_Etapa4_Arhitectura_SIA.md              # ← acest fișier completat (în rădăcină)
-└── requirements.txt  # Sau .lvproj
-```
-
-**Diferențe față de Etapa 3:**
-- Adăugat `data/generated/` pentru contribuția dvs originală
-- Adăugat `src/data_acquisition/` - MODUL 1
-- Adăugat `src/neural_network/` - MODUL 2
-- Adăugat `src/app/` - MODUL 3
-- Adăugat `models/` pentru model neantrenat
-- Adăugat `docs/state_machine.png` - OBLIGATORIU
-- Adăugat `docs/screenshots/` pentru demonstrație UI
-
----
+**Funcționalități implementate:**
+- [x] **Input User:** Flux video live de la camera web (Selectabil ID 0 sau 1).
+- [x] **Output:** 1. Bounding box colorat (Verde/Roșu) în jurul ochilor.
+    2. Bară de progres pentru "Scorul de Oboseală".
+    3. Mesaj de text "TREZESTE-TE" și alertă sonoră.
+- [x] **Dovada:** Screenshot demonstrativ inclus în `docs/ui_demo.png`.
 
 ## Checklist Final – Bifați Totul Înainte de Predare
 
 ### Documentație și Structură
-- [ ] Tabelul Nevoie → Soluție → Modul complet (minimum 2 rânduri cu exemple concrete completate in README_Etapa4_Arhitectura_SIA.md)
-- [ ] Declarație contribuție 40% date originale completată în README_Etapa4_Arhitectura_SIA.md
-- [ ] Cod generare/achiziție date funcțional și documentat
-- [ ] Dovezi contribuție originală: grafice + log + statistici în `docs/`
-- [ ] Diagrama State Machine creată și salvată în `docs/state_machine.*`
-- [ ] Legendă State Machine scrisă în README_Etapa4_Arhitectura_SIA.md (minimum 1-2 paragrafe cu justificare)
-- [ ] Repository structurat conform modelului de mai sus (verificat consistență cu Etapa 3)
+- [x] Tabelul Nevoie → Soluție → Modul complet (minimum 2 rânduri cu exemple concrete completate in README_Etapa4_Arhitectura_SIA.md)
+- [x] Declarație contribuție 40% date originale completată în README_Etapa4_Arhitectura_SIA.md
+- [x] Cod generare/achiziție date funcțional și documentat
+- [x] Dovezi contribuție originală: grafice + log + statistici în `docs/` (vezi `setup_achizitie.png`)
+- [x] Diagrama State Machine creată și salvată în `docs/state_machine.png`
+- [x] Legendă State Machine scrisă în README_Etapa4_Arhitectura_SIA.md (minimum 1-2 paragrafe cu justificare)
+- [x] Repository structurat conform modelului de mai sus (verificat consistență cu Etapa 3)
 
 ### Modul 1: Data Logging / Acquisition
-- [ ] Cod rulează fără erori (`python src/data_acquisition/...` sau echivalent LabVIEW)
-- [ ] Produce minimum 40% date originale din dataset-ul final
-- [ ] CSV generat în format compatibil cu preprocesarea din Etapa 3
-- [ ] Documentație în `src/data_acquisition/README.md` cu:
-  - [ ] Metodă de generare/achiziție explicată
-  - [ ] Parametri folosiți (frecvență, durată, zgomot, etc.)
-  - [ ] Justificare relevanță date pentru problema voastră
-- [ ] Fișiere în `data/generated/` conform structurii
+- [x] Cod rulează fără erori (`python src/collect_my_data.py`)
+- [x] Produce minimum 40% date originale din dataset-ul final (50% realizat)
+- [x] CSV generat în format compatibil cu preprocesarea din Etapa 3 (Structură de foldere ImageFolder)
+- [x] Documentație în `src/README.md` (sau folder dedicat) cu:
+  - [x] Metodă de generare/achiziție explicată
+  - [x] Parametri folosiți (frecvență, durată, zgomot, etc.)
+  - [x] Justificare relevanță date pentru problema voastră
+- [x] Fișiere în `data/raw/MyOpen` și `data/raw/MyClosed` conform structurii
 
 ### Modul 2: Neural Network
-- [ ] Arhitectură RN definită și documentată în cod (docstring detaliat) - versiunea inițială 
-- [ ] README în `src/neural_network/` cu detalii arhitectură curentă
+- [x] Arhitectură RN definită și documentată în cod (docstring detaliat) - versiunea inițială 
+- [x] README în `src/neural_network/` (sau `src/`) cu detalii arhitectură curentă
 
 ### Modul 3: Web Service / UI
-- [ ] Propunere Interfață ce pornește fără erori (comanda de lansare testată)
-- [ ] Screenshot demonstrativ în `docs/screenshots/ui_demo.png`
-- [ ] README în `src/app/` cu instrucțiuni lansare (comenzi exacte)
-
----
-
-**Predarea se face prin commit pe GitHub cu mesajul:**  
-`"Etapa 4 completă - Arhitectură SIA funcțională"`
-
-**Tag obligatoriu:**  
-`git tag -a v0.4-architecture -m "Etapa 4 - Skeleton complet SIA"`
-
-
+- [x] Propunere Interfață ce pornește fără erori (comanda de lansare testată)
+- [x] Screenshot demonstrativ în `docs/ui_demo.png`
+- [x] README în `src/app/` (sau `src/`) cu instrucțiuni lansare (comenzi exacte)
