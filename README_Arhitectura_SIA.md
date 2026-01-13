@@ -3,8 +3,8 @@
 **Disciplina:** Rețele Neuronale  
 **Instituție:** POLITEHNICA București – FIIR  
 **Student:** [Manole Daniel]  
-**[Link Repository GitHub](https://github.com/DanielxManole/ProiectRN-SistemDetectieOboseala)**
-**Data:** [11.12.2025]
+**[Link Repository GitHub](https://github.com/DanielxManole/ProiectRN-SistemDetectieOboseala)** **Data:** [11.12.2025]
+
 ---
 
 ## Scopul Etapei 4
@@ -15,27 +15,16 @@ Această etapă corespunde punctului **5. Dezvoltarea arhitecturii aplicației s
 
 ---
 
-##  Livrabile Obligatorii
+## Livrabile Obligatorii
 
 ### 1. Tabelul Nevoie Reală → Soluție SIA → Modul Software
-____________________________________________________________________________________________________________________________________________________________________________________________________
-|                  **Nevoie reală concretă**                     |               **Cum o rezolvă SIA-ul vostru**                  |               **Modul software responsabil**                   |
-|----------------------------------------------------------------|----------------------------------------------------------------|----------------------------------------------------------------|
-| Detectarea stării de somnolență (micro-somn) a șoferului în    | Monitorizare video continuă (30 FPS) → Clasificare stare ochi  | **Modul Achiziție (OpenCV)** + **Rețea Neuronală (CNN)**       |
-| timp real pentru prevenirea accidentelor rutiere.              | (Deschis/Închis) cu latență de procesare < 100ms per cadru.    |                                                                |
-|----------------------------------------------------------------|----------------------------------------------------------------|----------------------------------------------------------------|
-| Distincția precisă între clipitul natural și adormire, pentru  | Analiză temporală a secvenței video: declanșare alertă doar la | **Modul Logică de Control** (Scor Oboseală)                    |
-| evitarea alarmelor false.                                      | depășirea unui prag de 10-15 cadre consecutive (≈ 0.5 secunde) |                                                                |
-|                                                                | de ochi închiși.                                               |                                                                |
-|----------------------------------------------------------------|----------------------------------------------------------------|----------------------------------------------------------------|
-| Alertarea imediată a șoferului în momentul detectării          | Generare semnal acustic strident și avertisment vizual         | **Modul Alertare (Threading + UI)**                            |
-| pericolului, fără a bloca monitorizarea vizuală.               | (UI Roșu) pe un fir de execuție paralel (Threading), cu timp   |                                                                |
-|                                                                | de reacție < 0.1 secunde.                                      |                                                                |
-|----------------------------------------------------------------|----------------------------------------------------------------|----------------------------------------------------------------|
-| Funcționare robustă indiferent de poziția capului sau          | Segmentare facială avansată (MediaPipe 468 puncte) și          | **Modul Preprocesare** + **MediaPipe**                         |
-| iluminare variabilă.                                           | normalizare histogramă → Acuratețe de validare > 95% pe setul  |                                                                |
-|                                                                | de testare.                                                    |                                                                |
-|----------------------------------------------------------------|----------------------------------------------------------------|----------------------------------------------------------------|
+
+| **Nevoie reală concretă** | **Cum o rezolvă SIA-ul vostru** | **Modul software responsabil** |
+|---------------------------|--------------------------------|--------------------------------|
+| Detectarea stării de somnolență (micro-somn) a șoferului în timp real pentru prevenirea accidentelor rutiere. | Monitorizare video continuă (30 FPS) → Clasificare stare ochi (Deschis/Închis) cu latență de procesare < 100ms per cadru. | **Modul Achiziție (OpenCV)** + **Rețea Neuronală (CNN)** |
+| Distincția precisă între clipitul natural și adormire, pentru evitarea alarmelor false. | Analiză temporală a secvenței video: declanșare alertă doar la depășirea unui prag de 10-15 cadre consecutive (≈ 0.5 secunde) de ochi închiși. | **Modul Logică de Control** (Scor Oboseală) |
+| Alertarea imediată a șoferului în momentul detectării pericolului, fără a bloca monitorizarea vizuală. | Generare semnal acustic strident și avertisment vizual (UI Roșu) pe un fir de execuție paralel (Threading), cu timp de reacție < 0.1 secunde. | **Modul Alertare (Threading + UI)** |
+| Funcționare robustă indiferent de poziția capului sau iluminare variabilă. | Segmentare facială avansată (MediaPipe 468 puncte) și normalizare histogramă → Acuratețe de validare > 95% pe setul de testare. | **Modul Preprocesare** + **MediaPipe** |
 
 ---
 
@@ -48,38 +37,28 @@ ________________________________________________________________________________
 
 Pentru a asigura un grad ridicat de originalitate și robustețe a modelului, am adoptat o abordare hibridă în trei pași:
 
-1.  **Achiziție Primară (Data Collection):**
-    Am dezvoltat un script dedicat (`src/collect_my_data.py`) bazat pe detectoare Haar Cascade, cu care am achiziționat un set inițial de **600 de imagini brute** (300 Open / 300 Closed) având subiectul propriu în condiții reale de iluminare și poziționare.
+1. **Achiziție Primară (Data Collection):**
+   Am dezvoltat un script dedicat (`src/collect_my_data.py`) bazat pe detectoare Haar Cascade, cu care am achiziționat un set inițial de **600 de imagini brute** (300 Open / 300 Closed) având subiectul propriu în condiții reale de iluminare și poziționare.
 
-2.  **Generare Sintetică (Data Augmentation Offline):**
-    Deoarece datele brute erau insuficiente pentru Deep Learning, am implementat un pipeline de augmentare (`src/augment_data.py`) care a generat variații sintetice ale datelor proprii. Transformările aplicate au inclus:
-    * Rotații aleatorii (+/- 15 grade) pentru simularea înclinării capului.
-    * Ajustări de luminozitate și contrast (ColorJitter) pentru simularea condițiilor de zi/noapte.
-    * Adăugare de zgomot Gaussian și Blur pentru simularea camerelor web de slabă calitate.
-    * *Rezultat:* Multiplicarea datelor proprii de la 600 la **6,000 de observații unice**.
+2. **Generare Sintetică (Data Augmentation Offline):**
+   Deoarece datele brute erau insuficiente pentru Deep Learning, am implementat un pipeline de augmentare (`src/augment_data.py`) care a generat variații sintetice ale datelor proprii. Transformările aplicate au inclus:
+   * Rotații aleatorii (+/- 15 grade) pentru simularea înclinării capului.
+   * Ajustări de luminozitate și contrast (ColorJitter) pentru simularea condițiilor de zi/noapte.
+   * Adăugare de zgomot Gaussian și Blur pentru simularea camerelor web de slabă calitate.
+   * *Rezultat:* Multiplicarea datelor proprii de la 600 la **6,000 de observații unice**.
 
-3.  **Integrare și Balansare:**
-    Datasetul final a fost construit prin mixarea datelor generate anterior cu un subset aleatoriu din **MRL Eye Dataset**, respectiv **Kaggle**, păstrând o proporție echilibrată (50% Original / 50% Public) pentru a preveni bias-ul (supra-adaptarea pe o singură persoană) și a asigura generalizarea modelului.
+3. **Integrare și Balansare:**
+   Datasetul final a fost construit prin mixarea datelor generate anterior cu un subset aleatoriu din **MRL Eye Dataset**, respectiv **Kaggle**, păstrând o proporție echilibrată (50% Original / 50% Public) pentru a preveni bias-ul (supra-adaptarea pe o singură persoană) și a asigura generalizarea modelului.
 
-____________________________________________________________________________________________________________________________________________________________________________________________________
-|                   **Tip contribuție ales**                     |               **Implementare în Proiect (Dovada)**             |                 **Locație în Repository**                      |
-|----------------------------------------------------------------|----------------------------------------------------------------|----------------------------------------------------------------|
-| **Date achiziționate cu senzori proprii**                      | - Achiziție a **600 imagini brute** (300 Open / 300 Closed)    | `src/collect_my_data.py` `data/raw/MyOpen` `data/raw/MyClosed` |
-|                                                                | folosind camera web a laptopului.<br>• Etichetare manuală în   |                                                                |
-|                                                                | timp real (tasta 'o'/'c') prin script dedicat.                 |                                                                |
-|                                                                | - Protocol: Iluminare variabilă (naturală/artificială),        |                                                                |
-|                                                                | distanță 30-50cm față de senzor.                               |                                                                |
-|----------------------------------------------------------------|----------------------------------------------------------------|----------------------------------------------------------------|
-| **Date sintetice (Augmentare)**                                | - Generare a **5400 imagini sintetice** derivate din cele raw  | `src/augment_data.py` `data/raw/Open` (cu prefix `my_aug_`     |
-|                                                                | - Metode: Rotație afină, Zgomot Gaussian, Blur, Expunere       |                                                                |
-|                                                                | - Validare: Creșterea acurateței modelului de la 85% (doar     |                                                                |
-|                                                                | date brute) la 99% (date augmentate).                          |                                                                |
-|----------------------------------------------------------------|----------------------------------------------------------------|----------------------------------------------------------------|
+| **Tip contribuție ales** | **Implementare în Proiect (Dovada)** | **Locație în Repository** |
+|--------------------------|--------------------------------------|---------------------------|
+| **Date achiziționate cu senzori proprii** | - Achiziție a **600 imagini brute** (300 Open / 300 Closed) folosind camera web a laptopului.<br>• Etichetare manuală în timp real (tasta 'o'/'c') prin script dedicat.<br>- Protocol: Iluminare variabilă (naturală/artificială), distanță 30-50cm față de senzor. | `src/collect_my_data.py`<br>`data/raw/MyOpen`<br>`data/raw/MyClosed` |
+| **Date sintetice (Augmentare)** | - Generare a **5400 imagini sintetice** derivate din cele raw<br>- Metode: Rotație afină, Zgomot Gaussian, Blur, Expunere<br>- Validare: Creșterea acurateței modelului de la 85% (doar date brute) la 99% (date augmentate). | `src/augment_data.py`<br>`data/raw/Open` (cu prefix `my_aug_`) |
 
 **Detalii Protocol Achiziție (Dovada Experimentală):**
-1.  **Setup:** Laptop cu cameră web integrată (720p), poziționat la nivelul ochilor.
-2.  **Software:** Script propriu (`collect_my_data.py`) care utilizează Haar Cascades pentru a decupa automat regiunea de interes (ROI) a ochiului și a o salva doar la confirmarea manuală a utilizatorului.
-3.  **Procesare:** Imaginile au fost salvate direct în format decupat (ROI), color, cu timestamp unic pentru a garanta trasabilitatea.
+1. **Setup:** Laptop cu cameră web integrată (720p), poziționat la nivelul ochilor.
+2. **Software:** Script propriu (`collect_my_data.py`) care utilizează Haar Cascades pentru a decupa automat regiunea de interes (ROI) a ochiului și a o salva doar la confirmarea manuală a utilizatorului.
+3. **Procesare:** Imaginile au fost salvate direct în format decupat (ROI), color, cu timestamp unic pentru a garanta trasabilitatea.
 
 ### 3. Diagrama State Machine a Întregului Sistem (OBLIGATORIE)
 
