@@ -1,0 +1,4 @@
+Stage,Accuracy,Latency,F1
+Etapa 4,0.88,15.5,0.87
+Etapa 5,0.92,14.2,0.91
+Etapa 6,0.968,1.11,0.96

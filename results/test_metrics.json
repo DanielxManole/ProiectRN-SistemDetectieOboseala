@@ -1,0 +1,20 @@
+{
+    "accuracy": 0.9979,
+    "precision_closed": 0.9959,
+    "recall_closed": 1.0,
+    "f1_closed": 0.9979,
+    "precision_open": 1.0,
+    "recall_open": 0.9959,
+    "f1_open": 0.9979,
+    "confusion_matrix": [
+        [
+            730,
+            0
+        ],
+        [
+            3,
+            727
+        ]
+    ],
+    "total_test_samples": 1460
+}

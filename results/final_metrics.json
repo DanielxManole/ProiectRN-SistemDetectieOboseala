@@ -1,0 +1,7 @@
+{
+    "test_accuracy": 0.9979,
+    "f1_macro": 0.9979,
+    "precision_closed": 0.9959,
+    "recall_closed": 1.0,
+    "samples_tested": 1460
+}
