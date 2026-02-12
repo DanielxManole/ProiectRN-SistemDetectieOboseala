@@ -1,12 +1,14 @@
 # README – Etapa 4: Arhitectura Completă a Aplicației SIA bazată pe Rețele Neuronale
 
-**Disciplina:** Rețele Neuronale  
+**Disciplina:** Rețele Neuronale 
+
 **Instituție:** POLITEHNICA București – FIIR  
+
 **Student:** Manole Daniel
 
 **Link Repository GitHub:** (https://github.com/DanielxManole/ProiectRN-SistemDetectieOboseala)
 
-**Data:** [11.12.2025]
+**Data:** 11.12.2025
 
 ---
 
