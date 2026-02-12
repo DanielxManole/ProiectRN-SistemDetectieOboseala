@@ -1,0 +1,32 @@
+{
+    "metrics": {
+        "total_samples": 1460,
+        "accuracy": 0.99795,
+        "confusion_matrix": {
+            "TP": 727,
+            "TN": 730,
+            "FP": 0,
+            "FN": 3
+        }
+    },
+    "errors": [
+        {
+            "filename": "myaug_0_me_open_1765443905355.jpg",
+            "true_label": "Open",
+            "predicted": "Closed",
+            "confidence": 0.9873
+        },
+        {
+            "filename": "myaug_1_me_open_1765443905355.jpg",
+            "true_label": "Open",
+            "predicted": "Closed",
+            "confidence": 0.6509
+        },
+        {
+            "filename": "s0014_06931_0_1_1_2_1_01.png",
+            "true_label": "Open",
+            "predicted": "Closed",
+            "confidence": 0.6716
+        }
+    ]
+}

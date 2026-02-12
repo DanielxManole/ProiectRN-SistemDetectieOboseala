@@ -1,0 +1,28 @@
+# ================================
+# CONFIGURARE FINALĂ - STAGE 6
+# ================================
+
+model:
+  name: "DrowsinessCNN"              # Numele arhitecturii modelului CNN
+  version: "1.0.0-optimized"         # Versiunea finală optimizată
+  input_shape: [1, 64, 64]           # Dimensiunea inputului: 1 canal (grayscale), 64x64 pixeli
+  dropout_rate: 0.5                  # Rata de dropout pentru reducerea overfitting-ului
+  path: "models/optimized_model.pth" # Locația fișierului model antrenat
+
+inference:
+  CNN_THRESHOLD: 0.85                # Prag de decizie pentru clasificarea finală (somnolent / alert)
+  EAR_THRESHOLD: 0.16                # Prag pentru Eye Aspect Ratio (detectare ochi închiși)
+  consecutive_frames: 12             # Număr minim de frame-uri consecutive pentru activarea alarmei
+                                     # (reduce alarmele false la clipit natural)
+  latency_target_ms: 20              # Timp maxim dorit pentru inferență (în milisecunde)
+                                     # Performanța obținută: ~14ms per frame
+
+preprocessing:
+  normalization: "minus_one_to_one"  # Normalizare pixel values din [0,1] în [-1,1]
+  mean: 0.5                          # Media folosită pentru normalizare
+  std: 0.5                           # Deviația standard folosită pentru normalizare
+                                     # Formula: (pixel - mean) / std
+
+optimization_results:
+  final_accuracy: 0.9995             # Acuratețea finală pe setul de test
+  final_f1_score: 0.99               # F1-score final (echilibru între precision și recall)
