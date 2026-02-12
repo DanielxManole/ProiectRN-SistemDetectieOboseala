@@ -3,7 +3,9 @@
 **Disciplina:** Rețele Neuronale  
 **Instituție:** POLITEHNICA București – FIIR  
 **Student:** Manole Daniel
-**Link Repository GitHub:** [https://github.com/DanielxManole/ProiectRN-SistemDetectieOboseala](https://github.com/DanielxManole/ProiectRN-SistemDetectieOboseala)
+
+**Link Repository GitHub:** (https://github.com/DanielxManole/ProiectRN-SistemDetectieOboseala)
+
 **Data:** [11.12.2025]
 
 ---
@@ -57,7 +59,7 @@ Pentru a asigura un grad ridicat de originalitate și robustețe a modelului, am
 
 ### 3. Diagrama State Machine a Întregului Sistem (OBLIGATORIE)
 
-![Diagrama State Machine](docs/state_machine.svg)
+![Diagrama State Machine](state_machine.svg)
 
 **Arhitectura fluxului de date:**
 
