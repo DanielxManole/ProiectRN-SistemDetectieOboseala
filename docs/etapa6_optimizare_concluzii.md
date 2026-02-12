@@ -1,9 +1,13 @@
 # README – Etapa 6: Analiza Performanței, Optimizarea și Concluzii Finale
 
 **Disciplina:** Rețele Neuronale
+
 **Instituție:** POLITEHNICA București – FIIR
+
 **Student:** Manole Daniel
+
 **Link Repository GitHub:** [https://github.com/DanielxManole/ProiectRN-SistemDetectieOboseala](https://github.com/DanielxManole/ProiectRN-SistemDetectieOboseala)
+
 **Data predării:** 20.01.2026
 
 #### Tabel Experimente de Optimizare
@@ -538,5 +542,6 @@ Exemplu:
 1. Commit pe GitHub: `"Etapa 6 completă – Accuracy=X.XX, F1=X.XX (optimizat)"`
 2. Tag: `git tag -a v0.6-optimized-final -m "Etapa 6 - Model optimizat + Concluzii"`
 3. Push: `git push origin main --tags`
+
 
 ---
