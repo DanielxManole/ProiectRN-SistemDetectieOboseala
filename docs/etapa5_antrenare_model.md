@@ -1,9 +1,13 @@
 # README – Etapa 5: Configurarea și Antrenarea Modelului RN
 
 **Disciplina:** Rețele Neuronale
+
 **Instituție:** POLITEHNICA București – FIIR
+
 **Student:** Manole Daniel
+
 **Link Repository GitHub:** [https://github.com/DanielxManole/ProiectRN-SistemDetectieOboseala](https://github.com/DanielxManole/ProiectRN-SistemDetectieOboseala)
+
 **Data predării:** 15.01.2026
 
 ---
@@ -47,7 +51,7 @@ Am ales batch_size=32 pentru că avem N=14.600 samples → 14,600/32 ≈ 456 ite
 
 ## Integrare UI și Demonstrație
 
-Aplicația `src/app/webcam_detect.py` încarcă acum modelul antrenat `models/trained_model.pth`. 
+Aplicația `src/app/main.py` încarcă acum modelul antrenat `models/trained_model.pth`. 
 - **Inferență:** Timp de răspuns ~18ms.
 - **Feedback:** UI-ul se colorează în roșu și emite un semnal sonor când scorul de oboseală depășește pragul stabilit.
 
@@ -220,8 +224,9 @@ Exemplu:
 ## Predare și Contact
 
 **Predarea se face prin:**
-1. Commit pe GitHub: `"Etapa 5 completă – Accuracy=X.XX, F1=X.XX"`
+1. Commit pe GitHub: `"Etapa 5 completă – Accuracy=99.93%, F1=0.99"`
 2. Tag: `git tag -a v0.5-model-trained -m "Etapa 5 - Model antrenat"`
 3. Push: `git push origin main --tags`
+
 
 ---
