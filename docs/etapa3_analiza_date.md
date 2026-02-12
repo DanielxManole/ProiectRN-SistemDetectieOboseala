@@ -1,8 +1,11 @@
 # README – Etapa 3: Analiza și Pregătirea Setului de Date pentru Rețele Neuronale
 
-**Disciplina:** Rețele Neuronale  
-**Instituție:** POLITEHNICA București – FIIR  
+**Disciplina:** Rețele Neuronale
+
+**Instituție:** POLITEHNICA București – FIIR
+
 **Student:** Manole Daniel
+
 **Link Repository GitHub:** [https://github.com/DanielxManole/ProiectRN-SistemDetectieOboseala](https://github.com/DanielxManole/ProiectRN-SistemDetectieOboseala)
 
 ---
@@ -139,3 +142,4 @@ project-name/
 - [x] Documentație actualizată în README + `data/README.md`
 
 ---
+
